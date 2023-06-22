@@ -11,6 +11,9 @@ output:
 date: "2023-06-22"
 ---
 
+View the Github repo [here](https://github.com/de-data-lab/onboarding-geospatial-FE/tree/main). The finished code is available [in this branch](https://github.com/de-data-lab/onboarding-geospatial-FE/tree/sample-app-finished).
+
+
 # **Let's build a mapping app!**
 
 Today, we're going to build a mapping app using the popular [Leaflet](https://leafletjs.com/) library for JavaScript. We'll reinforce several concepts that will help us along the journey of working with geospatial data at the lab:
