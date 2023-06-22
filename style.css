@@ -1,0 +1,102 @@
+@import url("https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap");
+
+body {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-family: "Roboto";
+}
+
+#map {
+  height: 100vh;
+  width: 100vw;
+}
+
+.control {
+  
+  border-radius: 4px;
+  position: absolute;
+  height: max-content;
+  z-index: 600;
+  width: 300px;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 1px 1px 30px rgba(0, 0, 0, 0.1);
+}
+
+#legend {
+  bottom: 20%;
+  right: 5%;
+  padding: 1.5rem;
+}
+
+#legend-title {
+  margin: 0 0 1rem 0;
+  color: #0057BB;
+  padding: 0;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 800;
+  z-index: 9000;
+}
+
+#controls {
+  top: 5%;
+  right: 5%;
+  padding: 1.25rem 1.5rem;
+}
+
+#controls h2 {
+  color: #0057BB;
+  font-weight: 800;
+}
+
+.select-box {
+  margin-bottom: 1rem;
+}
+
+#controls select {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+}
+
+#legend ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legend-entry {
+  margin-bottom: 0.3rem;
+  display: flex;
+  gap: 0.5rem;
+}
+
+.legend-box {
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.legend-entry span {
+  display: block;
+  height: 20px;
+  min-width: 20px;
+}
+
+.leaflet-interactive:focus {
+  outline: none;
+}
+
+footer {
+  background-color: rgba(255,255,255,.9);
+  height: 60px;
+  width: 100vw; 
+  position: absolute; 
+  bottom: 0;
+  left: 0;
+  z-index: 9000;
+}
+
+footer img {
+  display: block;
+  margin: auto; 
+}

@@ -1,0 +1,453 @@
+---
+title: "Building a Mapping App with Delaware Census Data"
+output: 
+  html_document:
+    theme: cosmo
+    toc: true
+    toc_float: 
+        collapsed: false
+        number_sections: true
+    code_folding: show
+date: "2023-06-22"
+---
+
+# **Let's build a mapping app!**
+
+Today, we're going to build a mapping app using the popular [Leaflet](https://leafletjs.com/) library for JavaScript. We'll reinforce several concepts that will help us along the journey of working with geospatial data at the lab:
+
+-   Fetching and interpreting GeoJSON data
+
+-   Using Leaflet
+
+-   Understanding Census Tracts^[The data come from the 2020 Decennial Census and the 2017-2021 5-Year American Community Survey estimates.]
+
+-   Choosing color palettes
+
+## **What We'll Build**
+
+![*The finished app*](images/Screen%20Shot%202023-06-22%20at%202.19.59%20AM.png)
+
+We will be building a simple app that allows a user to select a Census variable and visualize it on a map of Delaware. We'll also make it possible to toggle through different color schemes so that we can see what works best (this is probably not a feature that would be incorporated into a real app).
+
+------------------------------------------------------------------------
+
+## Getting the Lay of the Land
+
+Let's familiarize ourselves with the files that are already in place.
+
+### `index.html`
+
+Let's have a look at `index.html`.
+
+First, we have a `div` called `legend` that will eventually contain the legend for our app.
+
+The `div` called `controls` contains two child `div`s: One containing a placeholder for a variable selector, and another containing a placeholder for a color scheme selector.
+
+Next, we have a single empty div with an id of `#map`. We'll return to this very soon.
+
+Next, we have a footer containing the Tech Impact logo. We won't be touching this.
+
+Finally, we import `main.js`, which is where we'll be doing the bulk of our actual coding.
+
+### `utils.js`
+
+This file contains two utility functions which we'll use later to build our map's functionality. Don't edit the functions in this file. 
+
+### `de-data.geojson`
+
+This file contains all of the geographic information and Census data that we will need for our app. Let's try to get a sense of what's in there.
+
+Let's start by heaving over to [geojson.io](https://geojson.io/) to get a quick visual of the data. Once you're there, click "Open" and then locate the GeoJSON file on your machine. (Alternatively, you can copy and paste the file's contents into the "JSON" tab on GeoJSON.io). Now answer these questions for yourself:
+
+1.  **What geographic unit does each feature represent?**
+2.  **What data is attached to each feature?**
+3.  **What is the unique identifier for each feature?**
+4.  **What geometry type does each feature contain?**
+
+------------------------------------------------------------------------
+
+## Diving into `main.js`
+
+Now we'll start coding!
+
+First things first, we are going to need to install two libraries: Leaflet and D3 (which we'll use to generate a color palette). Run these commands in your terminal (make sure you're in your project's root directory first):
+
+```{bash, eval=F}
+npm install leaflet d3
+```
+
+Now import Leaflet at the top of `main.js` (D3 is already imported in `utils.js`, which we won't touch.) Note that we're also importing Leaflet's CSS file, without which the map won't render properly:
+
+```{js, eval=F}
+import * as L from 'leaflet'; 
+import 'leaflet/dist/leaflet.css';
+```
+
+We now have almost all we need to display our base map. Take note of the following code:
+
+```{js}
+const map = L.map('map').setView([39.2, -75.523], 9);
+```
+
+-   **L** is the name we've given to the Leaflet library. The `map()` function takes one argument: the id of the DOM element where we want our map to be created. As noted above, `index.html` contains an empty `div` with the id `#map`. **Leaflet always requires an empty container to render a new map!**
+-   `setView()` is another Leaflet function that allows us to center the map over a certain geographical area. Here, I've chosen the latitude and longitude `[39.2, -75.523]` so that the state of Delaware is in focus. The second argument to `setView()` is the zoom level (a higher number means a more zoomed-in map).
+
+Now we've initialized the map, but nothing is showing up -- what gives? As you'll recall, a basemap is made up of **tiles**. To actually display our base map, we need to select a tile provider and add it to the map:
+
+```{js}
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+```
+
+-   Again, `tileLayer()` is a Leaflet function that allows us to download tiles from a provider. Here I've chosen Carto Voyager, which is free and doesn't require an API key. Browse all available providers here and see if you find another one you like: <https://leaflet-extras.github.io/leaflet-providers/preview/>
+-   Don't forget to chain on the `addTo()` function and pass in the `map` variable.
+
+Now you should see something like this:
+
+![](images/Screen%20Shot%202023-06-22%20at%203.01.44%20AM.png)
+
+Let there be a map!
+
+------------------------------------------------------------------------
+
+## Fetching the Data
+
+So far, we've created the base map, but it has no layers and no data attached to it. Let's begin to fix that.
+
+First, we need a way to fetch the GeoJSON data, which is currently located in the `public/` directory. Luckily, you don't need to reinvent the wheel - you can use any method you're comfortable with, from the browser's Fetch API to Axios to something like D3.json. To keep it simple, I'll be using the Fetch API. Let's fetch the data and then log it to the console as a sanity check:
+
+```{js}
+fetch("de-data.geojson")
+  .then(res => res.json())
+  .then(data => {
+    console.log(data)
+  })
+```
+
+Check your browser's console. You should see something like this:
+
+![](images/Screen%20Shot%202023-06-22%20at%203.06.58%20AM.png)
+
+Success! We managed to fetch the data and can see each of our 257 Census Tracts sitting snugly in our browser's console.
+
+------------------------------------------------------------------------
+
+## Add the GeoJSON to the map
+
+Now we'll start adding to the data to the map.
+
+Working with GeoJSON data is very easy in Leaflet thanks to the `geoJSON()` function, which instantiates a new layer containing GeoJSON data. All we have to do is pass in the data object containing the GeoJSON and then add it to the map.
+
+```{js}
+fetch("de-data.geojson")
+  .then(res => res.json())
+  .then(data => {
+    L.geoJSON(data).addTo(map)
+  })
+```
+
+Note that this **must** be done inside of the call to the Fetch API (the data has to load before it can be added to the map).
+
+You'll now see something like this. By default, Leaflet gives all layers a blue stroke and a semi-transparent blue fill. What this means is we've successfully added a GeoJSON layer to our map!
+
+![](images/Screen%20Shot%202023-06-22%20at%203.14.33%20AM.png)
+
+------------------------------------------------------------------------
+
+## Enhance the map with a tooltip and some styling
+
+To control the styling of our GeoJSON layer, we can pass in an `options` config object after the `data` argument. Within `options`, we can add a `style` property that returns an object containing all of our style preferences.
+
+```{js}
+  // This code goes inside the call to the Fetch API
+    L.geoJSON(data, {
+          style: function (feature) {
+              return { 
+                weight: .3,
+                color: "black",
+                fillColor: "white",
+                fillOpacity: .8           
+              }
+          }
+        })
+      .addTo(map)
+```
+
+For now, our `style` function returns an object which gives each feature a stroke weight of .3, a stroke color of black, a fill color of white, and a fill opacity of .8. We will obviously change this down the road.
+
+Next we'll add a simple tooltip, in which we'll finally begin to incorporate actual properties from our GeoJSON data. The below code creates a tooltip which displays the name of the hovered Census Tract:
+
+```{js}
+L.geoJSON(data, {
+          style: function (feature) {
+              return { 
+                weight: .3,
+                color: "black",
+                fillColor: "white",
+                fillOpacity: .8           
+              }
+          }
+        })
+      .bindTooltip(function (layer) {
+        return layer.feature.properties.NAME
+      })
+    .addTo(map)
+```
+
+-   Leaflet's `bindTooltip()` function takes in a function as an argument. This function accepts one argument, which is the layer on which the tooltip will be applied. We can then access each feature's properties through `layer.feature.properties` followed by the name of the property we need. Here, we access and return the NAME property, which contains the name of each feature's Census Tract. Hover over a Census Tract and you'll see the tooltip in action:
+
+![](images/Screen%20Shot%202023-06-22%20at%208.39.17%20AM.png)
+
+------------------------------------------------------------------------
+
+## Color the map based on a variable
+
+A black and white map isn't very interesting! Let's see how we can use a variable from the dataset to color the map.
+
+First, let's import the function `getColorScale` from `utils.js`. This is a utility function I designed to make it easier to generate a color scale from the dataset, which is a bit beyond the scope of this lesson. At the top of the file, let's add:
+
+```{js}
+import { getColorScale } from './utils';
+```
+
+`getColorScale` takes three arguments: 1) a GeoJSON FeatureCollection, 2) the name of the Census variable from the object that will be used to generate the color scale, and 3) the specific color scheme to use (one of the ones listed [here](https://github.com/d3/d3-scale-chromatic)).
+
+Let's first define a Census variable and color scheme of interest at the top of the file, after our imports.
+
+```{js}
+let variable = "medincome"; 
+let colorScheme = "interpolateBlues";
+```
+
+Now inside of the call to the Fetch API, call `getColorScale` and pass in the full GeoJSON dataset, the name of a Census variable from the dataset, and the name of a color scheme. The below code returns a function, `colScale`, which we can use in a bit to generate a color for each of our GeoJSON features.
+
+```{js}
+const colScale = getColorScale(data, variable, colorScheme); 
+```
+
+In order to make use of this function, we have to return to the `style` property inside the call to `L.geoJSON()`. Inside the `fillColor` property, we call `colScale` and pass in the same property we used inside `getColorScale`.
+
+```{js}
+fetch("de-data.geojson")
+  .then(res => res.json())
+  .then(data => {
+    const colScale = getColorScale(data, variable, colorScheme); 
+
+    L.geoJSON(data, {
+          style: function (feature) {
+              return { 
+                weight: .3,
+                color: "black",
+                fillColor: colScale(feature.properties[variable]), 
+                fillOpacity: .8           
+              }
+          }
+        })
+      .bindTooltip(function (layer) {
+        return layer.feature.properties.NAME
+      })
+      .addTo(map)
+  })
+```
+
+![](images/Screen%20Shot%202023-06-22%20at%209.23.22%20AM.png)
+
+Now the map is colored by the `medincome` variable!
+
+------------------------------------------------------------------------
+
+## Add a Legend
+
+Let's add a legend to the map. Adding a legend to a Leaflet map is a bit of a complex process, and there are many approaches and third-party libraries to address the issue. For this process, we will again take advantage of a function from `utils.js` that will take care of drawing a legend for us.
+
+First, import it.
+
+```{js}
+import { getColorScale, drawLegend } from './utils';
+```
+
+`drawLegend` accepts a single argument - the name of a color scheme. We can use the same `colorScheme` variable that we used above. We can call this function directly after adding our GeoJSON layer:
+
+```{js}
+  L.geoJSON(data, {
+          ...
+    })
+
+  drawLegend(colorScheme);  // pass in the colorScheme variable
+```
+
+Refresh the app and you'll see we now have a basic legend:
+
+![](images/Screen%20Shot%202023-06-22%20at%209.34.33%20AM.png)
+
+------------------------------------------------------------------------
+
+## Add the controls to the user interface
+
+At the moment, our app is completely static. We want to give the user the ability to tailor their view of the data by selecting a Census variable from a dropdown.
+
+So we need to 1) make a list of each of the Census variables available in our dataset and then 2) create a `<select>` box that includes each of them. The properties available in the dataset are:
+
+-   **medincome**: Median Income
+-   **total_pop**: Total Population
+-   **median_age**: Median Age
+-   **institutionalized**: % Institutionalized Population
+-   **housing_vacancy_perc**: % Housing Vacancy
+-   **total_units**: Total Housing Units
+-   **total_units_per_cap**: Total Housing Units Per Capita
+
+Our first `select` box (inside `index.html`) would then look like this:
+
+```{html}
+    <div class="select-box" id="variable-select">
+        <span>Select a Variable</span>
+        <select id="options">
+          <option value="medincome">Median Income</option>
+          <option value="total_pop">Total Population</option>
+          <option value="median_age">Median Age</option>
+          <option value="institutionalized">
+            % Institutionalized Population
+          </option>
+          <option value="housing_vacancy_perc">% Housing Vacancy</option>
+          <option value="total_units">Total Housing Units</option>
+          <option value="total_units_per_cap">
+            Total Housing Units Per Capita
+          </option>
+        </select>
+      </div>
+```
+
+We want another `select` box that allows the user to select a color palette. The code to do this is below -- note that the color palette names come from [D3](http://using-d3js.com/04_05_sequential_scales.html). Don't worry too much about learning exactly how to use them for the purposes of this exercuse.
+
+```{html}
+    <div class="select-box">
+        <span>Select a Color Scheme</span>
+          <select id="colorScheme">
+            <option value="interpolateBlues" selected>interpolateBlues</option>
+            <option value="interpolateRdYlBu">interpolateRdYlBu</option>
+            <option value="interpolateBrBG">interpolateBrBG</option>
+            <option value="interpolateBuGn">interpolateBuGn</option>
+            <option value="interpolateCividis">interpolateCividis</option>
+            <option value="interpolateCool">interpolateCool</option>
+            <option value="interpolateBuPu">interpolateBuPu</option>
+            <option value="interpolatePuBu">interpolatePuBu</option>
+            <option value="interpolatePuBuGn">interpolatePuBuGn</option>
+            <option value="interpolateRdYlBu">interpolateRdYlBu</option>
+            <option value="interpolateViridis">interpolateViridis</option>
+            <option value="interpolateRdYlGn">interpolateRdYlGn</option>
+            <option value="interpolateReds">interpolateReds</option>
+            <option value="interpolateRainbow">interpolateRainbow</option>
+          </select>
+      </div>
+    </div>
+```
+
+Let's check in with where we are after adding the select boxes:
+
+![](images/Screen Shot 2023-06-22 at 9.54.17 AM.png)
+
+-----------------------------------------------------------
+
+## Connect the controls to the data 
+
+So we've built our controls, but so far they don't do anything. We want the map to re-draw whenever the user changes the color scheme or Census variable dropdown. Let's proceed with this in two steps:
+
+1. Create a **reusable function** that allows us to re-draw the map 
+2. Attach **event listeners** to the dropdowns and call the map re-drawing function whenever the selected item changes. 
+
+### Create a reusable map drawing function 
+
+We'll create a function, `drawMap`, which includes all of the code we've written so far **except** the lines where we've initialized the map and the tile layer -- we only need these things to happen once. What `drawMap` does is encapsulate the logic for adding data to the map so that we can call it wherever we need. Here's the full code: 
+
+
+```{js}
+function drawMap() {
+  fetch("de-data.geojson")
+  .then(res => res.json())
+  .then(data => {
+
+    const colScale = getColorScale(data, variable, colorScheme); 
+
+    L.geoJSON(data, {
+          style: function (feature) {
+              return { 
+                weight: .3,
+                color: "black",
+                fillColor: colScale(feature.properties[variable]),
+                fillOpacity: .8           
+              }
+          }
+        })
+      .bindTooltip(function (layer) {
+        return layer.feature.properties.NAME
+      })
+      .addTo(map)
+  })
+  drawLegend(colorScheme);
+  
+  document.querySelector("#legend-title").innerText = variable;
+
+}
+```
+
+### Attach event listeners
+
+Let's now add three event listeners: 
+
+1. One to call `drawMap()` when the page finishes loading initially;
+2. One to call `drawMap()` when the selected Census variable changes; 
+3. One to call `drawMap()` when the selected color scheme changes. 
+
+Our first event listener uses the `DOMContentLoaded` event to call `drawMap()` when the page's content has loaded: 
+
+```{js}
+  document.addEventListener("DOMContentLoaded", () => {
+    drawMap(); 
+  })
+```
+
+The second event listener uses the `select` box's `change` event to re-draw the map whenever the selected Census variable changes. It **also** updates the `variable` name that we defined earlier. 
+
+```{js}
+  document.querySelector("#options").addEventListener("change", (e) => {
+    variable = e.target.value;
+  drawMap();
+  })
+```
+
+Finally, an event listener to update the `colorScheme` variable and re-draw the map whenever the color scheme is changed: 
+
+```{js}
+  document.querySelector("#colorScheme").addEventListener("change", (e) => {
+    colorScheme = e.target.value;
+  drawMap();
+  })
+```
+
+--------------------------------------------------
+
+## Update the tooltip 
+
+By now, all of the basic functionality of our map is coded! As a last step, let's create a more informative tooltip. For now, our tooltip just displays the name of the hovered Census Tract, which isn't very useful. Let's change that. 
+
+As mentioned, we can access any of our features' properties in the tooltip by referencing `layer.feature.properties`. To format the tooltip, we can use plain old HTML. Let's build a tooltip that shows the name of the Census Tract (`properties.NAME`) one one line, followed by the selected variable name (`variable`) and the variable's value on the second line (`properties[variable]`)^[We use bracket notation here because the variable's name will change with every user interaction]. Within the `drawMap` function:
+
+```{js}
+L.geoJSON(...)
+        .bindTooltip(function (layer) {
+          return 
+          `<strong>${layer.feature.properties.NAME}:</strong>
+                  <br/>
+           ${variable}: <strong>${layer.feature.properties[variable].toLocaleString()}</strong>`;
+        })
+        .addTo(map);
+```
+
+## Takeaways
+
+That's all it took to build a simple mapping application with real Census data and the Leaflet library! From here, you could continue building on the app by enhancing the tooltip, building more click interactions, incorporating geolocation, etc. 
+
+## Further reading and resources 
+* [Leaflet documentation](https://leafletjs.com/reference.html)
+* [D3 color schemes](https://observablehq.com/@d3/color-schemes)
+* [D3 scale functions](https://www.d3indepth.com/scales/)
+

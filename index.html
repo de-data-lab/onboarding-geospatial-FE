@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <link rel="stylesheet" href="./style.css"/>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Delaware Census Data Explorer Sample App</title>
+  </head>
+  <body>
+    <div class="control" id="legend">
+      <h3 id="legend-title"></h3>
+      <div id="legend-colors"></div>
+    </div>
+
+    <div class="control" id="controls">
+      <h2>Delaware Census Data Explorer Sample App</h2>
+      <p>
+        Select a Census variable from the select box below to view it visualized
+        on the map.
+      </p>
+
+      <div class="select-box" id="variable-select">
+        <span>Select a Variable</span>
+        <select id="options">
+          <option value="medincome">Median Income</option>
+          <option value="total_pop">Total Population</option>
+          <option value="median_age">Median Age</option>
+          <option value="institutionalized">
+            % Institutionalized Population
+          </option>
+          <option value="housing_vacancy_perc">% Housing Vacancy</option>
+          <option value="total_units">Total Housing Units</option>
+          <option value="total_units_per_cap">
+            Total Housing Units Per Capita
+          </option>
+        </select>
+      </div>
+
+      <div class="select-box">
+        <span>Select a Color Scheme</span>
+        <select id="colorScheme">
+          <option value="interpolateBlues" selected>interpolateBlues</option>
+          <option value="interpolateRdYlBu">interpolateRdYlBu</option>
+          <option value="interpolateBrBG">interpolateBrBG</option>
+          <option value="interpolateBuGn">interpolateBuGn</option>
+          <option value="interpolateCividis">interpolateCividis</option>
+          <option value="interpolateCool">interpolateCool</option>
+          <option value="interpolateBuPu">interpolateBuPu</option>
+          <option value="interpolatePuBu">interpolatePuBu</option>
+          <option value="interpolatePuBuGn">interpolatePuBuGn</option>
+          <option value="interpolateRdYlBu">interpolateRdYlBu</option>
+          <option value="interpolateViridis">interpolateViridis</option>
+          <option value="interpolateRdYlGn">interpolateRdYlGn</option>
+          <option value="interpolateReds">interpolateReds</option>
+          <option value="interpolateRainbow">interpolateRainbow</option>
+        </select>
+      </div>
+    </div>
+
+    <div id="map"></div>
+
+    <footer>
+      <img src="tilogo.png" height="auto" width="200" alt="Tech Impact logo"/>
+    </footer>
+    <script type="module" src="/main.js"></script>
+  </body>
+</html>
