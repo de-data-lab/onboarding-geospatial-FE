@@ -110,6 +110,16 @@ Now you should see something like this:
 
 Let there be a map!
 
+Here's the complete code so far: 
+
+```{js}
+import * as L from 'leaflet'; 
+import 'leaflet/dist/leaflet.css';
+
+const map = L.map('map').setView([39.2, -75.523], 9);
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png').addTo(map);
+```
+
 ------------------------------------------------------------------------
 
 ## Fetching the Data
@@ -158,7 +168,7 @@ You'll now see something like this. By default, Leaflet gives all layers a blue 
 
 ## Enhance the map with a tooltip and some styling
 
-To control the styling of our GeoJSON layer, we can pass in an `options` config object after the `data` argument. Within `options`, we can add a `style` property that returns an object containing all of our style preferences.
+To control the styling of our GeoJSON layer, we can pass in an object after the `data` argument. Within this object, we can add a `style` property that returns *yet another* object containing all of our style preferences (such as `weight`, `color`, `fillColor`, etc.)
 
 ```{js}
   // This code goes inside the call to the Fetch API
